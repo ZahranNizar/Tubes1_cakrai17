@@ -46,3 +46,63 @@ void FSM::setMoveCount(int count) {
 int FSM::getMoveCount() const {
     return FSM::moveCount;
 }
+
+void FSM::addStateToHistory(SystemState state, uint32_t time) {
+    FSM::stateHistory.push_back(std::make_pair(state, time));
+}
+
+vector<pair<SystemState, uint32_t>> FSM::getStateHistory() const {
+    return FSM::stateHistory;
+}
+
+uint32_t FSM::getLastHeartbeat() const {
+    return FSM::lastHeartbeat;
+}
+
+void FSM::setLastHeartbeat(uint32_t heartbeat) {
+    FSM::lastHeartbeat = heartbeat;
+}
+
+void FSM::start() {
+    FSM(1000);
+}
+
+void FSM::update() {
+    switch(FSM::getCurrentState()) {
+        case SystemState::INIT: return FSM::performInit();
+        case SystemState::IDLE: return FSM::performProcess();
+        case SystemState::MOVEMENT: return FSM::performMovement();
+        case SystemState::SHOOTING: return FSM::performShooting();
+        case SystemState::CALCULATION: return FSM::performCalculation();
+        case SystemState::ERROR: return FSM::performErrorHandling();
+        case SystemState::STOPPED: return FSM::shutdown();
+    }
+}
+
+void FSM::performInit() {
+
+}
+
+void FSM::performProcess() {
+
+}
+
+void FSM::performMovement() {
+
+}
+
+void FSM::performShooting() {
+
+}
+
+void FSM::performCalculation() {
+
+}
+
+void FSM::performErrorHandling() {
+
+}
+
+void FSM::shutdown() {
+    
+}
