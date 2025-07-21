@@ -30,3 +30,19 @@ void FSM::setDelay(uint32_t delay) {
 void FSM::getDelay(uint32_t &delay) const {
     delay = FSM::delay;
 }
+
+void FSM::setErrorCount(int count) {
+    FSM::errorCount = count;
+}
+
+int FSM::getErrorCount() const {
+    return FSM::errorCount;
+}
+
+void FSM::setMoveCount(int count) {
+    FSM::moveCount = count;
+}
+
+int FSM::getMoveCount() const {
+    return FSM::moveCount;
+}
