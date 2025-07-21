@@ -1,6 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <algorithm>
+#include <thread>
+#include <chrono>
 #include "fsm.hpp"
+
+string StatusProgram(SystemState state){
+    switch (state)
+    {
+    case SystemState::INIT: return "INIT";
+    case SystemState::IDLE: return "IDLE";
+    case SystemState::MOVEMENT: return "MOVEMENT";
+    case SystemState::SHOOTING: return "SHOOTING";
+    case SystemState::CALCULATION: return "CALCULATION";
+    case SystemState::ERROR: return "ERROR";
+    case SystemState::STOPPED: return "STOPPED";
+    default: return "UNKNOWN";
+    }
+}
 
 FSM::FSM() : currentState(SystemState::INIT), lastHeartbeat(0), errorCount(0), stateHistory{} {
     
@@ -19,11 +37,13 @@ SystemState FSM::getCurrentState() const {
 }
 
 void FSM::transitionToState(SystemState newState) {
-    FSM::lastHeartbeat += FSM::delay; 
     FSM::currentState = newState;
+    auto waktu = std::chrono::system_clock::now();
+    // heartbeat = std::chrono::duration_cast<std::chrono::milliseconds>(waktu.time_since_epoch()).count();
 }
 
 void FSM::setDelay(uint32_t delay) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     FSM::delay = delay;
 }
 
@@ -60,11 +80,44 @@ uint32_t FSM::getLastHeartbeat() const {
 }
 
 void FSM::setLastHeartbeat(uint32_t heartbeat) {
+    auto waktu = std::chrono::system_clock::now();
+    heartbeat = std::chrono::duration_cast<std::chrono::milliseconds>(waktu.time_since_epoch()).count();
     FSM::lastHeartbeat = heartbeat;
 }
 
 void FSM::start() {
-    FSM(1000);
+    std::cout << "\nStarting FSM Program..." << std::endl;
+    FSM::update();
+    std::string command;
+    std::string lower_command;
+
+    while(true) {
+        FSM::printStatus();
+
+        std::cout << "Here are the list of commands for this Program" << std::endl;
+        std::cout << "(IDLE, MOVEMENT, SHOOTING, CALCULATION, STOPPED)" << std::endl;
+        std::cout << "Please enter a command : ";
+        std::getline(std::cin, command);
+        std::transform(lower_command.begin(), lower_command.end(),lower_command.begin(), [](unsigned char c){ return std::tolower(c); });
+
+        if (lower_command == "idle") {
+            transitionToState(SystemState::IDLE);
+        } else if (lower_command == "movement") {
+            transitionToState(SystemState::MOVEMENT);
+        } else if (lower_command == "shooting") {
+            transitionToState(SystemState::SHOOTING);
+        } else if (lower_command == "calculation") {
+            transitionToState(SystemState::CALCULATION);
+        } else if (lower_command == "stopped") {
+            transitionToState(SystemState::STOPPED);
+            break;
+        } else {
+            transitionToState(SystemState::ERROR);
+        }
+
+        FSM::update();
+        FSM::addStateToHistory(getCurrentState(), 0);
+    }
 }
 
 void FSM::update() {
@@ -77,10 +130,37 @@ void FSM::update() {
         case SystemState::ERROR: return FSM::performErrorHandling();
         case SystemState::STOPPED: return FSM::shutdown();
     }
+
+}
+
+void FSM::printStatus() {
+    uint32_t delayPrint;
+    getDelay(delayPrint);
+    std::cout << "Status FSM : " << StatusProgram(getCurrentState()) << endl;
+    std::cout << "Last Heartbeat Time : " << getLastHeartbeat() << endl;   
+    std::cout << "Delay : " << delayPrint << endl;
+    std::cout << "Error Count : " << getErrorCount() << endl;
+}
+
+void FSM::printStateHistory() {
+    if (stateHistory.empty()) {
+        std::cout << "No History of States ever recorded" << endl;
+        return;
+    }
+    std::cout << "\n----- State History -----" << std::endl;
+    for (size_t n = 0; n < stateHistory.size(); ++n) {
+        std::cout << (n + 1) << ". State : " << StatusProgram(stateHistory[n].first)
+                  << ", Heartbeat Time : " << getLastHeartbeat() << endl;  
+    }
+    std::cout << "---------------------------" << std::endl;
+
 }
 
 void FSM::performInit() {
-
+    setDelay(1000);
+    transitionToState(SystemState::IDLE);
+    std::cout << "Initializing system..." << std::endl;
+    printStatus();
 }
 
 void FSM::performProcess() {
