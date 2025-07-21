@@ -14,3 +14,19 @@ FSM::~FSM() {
     FSM::stateHistory.clear();
 }
 
+SystemState FSM::getCurrentState() const {
+    return currentState;
+}
+
+void FSM::transitionToState(SystemState newState) {
+    FSM::lastHeartbeat += FSM::delay; 
+    FSM::currentState = newState;
+}
+
+void FSM::setDelay(uint32_t delay) {
+    FSM::delay = delay;
+}
+
+void FSM::getDelay(uint32_t &delay) const {
+    delay = FSM::delay;
+}
