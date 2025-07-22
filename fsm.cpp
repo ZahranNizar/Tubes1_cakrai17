@@ -6,6 +6,7 @@
 #include <chrono>
 //#include <windows.h>
 #include <atomic>
+#include <cctype>
 #include "fsm.hpp"
 
 string StatusProgram(SystemState state){
@@ -46,7 +47,15 @@ void FSM::transitionToState(SystemState newState) {
 
 void FSM::setDelay(uint32_t delay) {
     //Sleep(delay);
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+    auto start_time = std::chrono::system_clock::now();
+    while (true) {
+        auto current_time = std::chrono::system_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+        if (elapsed_time > delay) {
+            break;
+        }
+    }
 }
 
 void FSM::getDelay(uint32_t &delay) const {
@@ -141,7 +150,7 @@ void FSM::update() {
         case SystemState::ERROR: return FSM::performErrorHandling();
         case SystemState::STOPPED: return FSM::shutdown();
     }
-    
+
 }
 
 void FSM::printStatus() {
@@ -181,13 +190,12 @@ void FSM::performInit() {
 }
 
 void FSM::performProcess() {
-    std::string command;
     std::string lower_command;
 
     std::cout << "Here are the list of commands for this Program" << std::endl;
     std::cout << "(IDLE, MOVEMENT, SHOOTING, CALCULATION, STOPPED)" << std::endl;
     std::cout << "Please enter a command : ";
-    std::getline(std::cin, command);
+    std::getline(std::cin, lower_command);
     std::transform(lower_command.begin(), lower_command.end(),lower_command.begin(), [](unsigned char c){ return std::tolower(c); });
 
     if (lower_command == "idle") {
@@ -247,5 +255,4 @@ void FSM::performErrorHandling() {
 
 void FSM::shutdown() {
     std::cout << "System stopped, shutting down..." << endl;
-    FSM::~FSM();
 }
