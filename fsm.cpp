@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
+//#include <windows.h>
 #include "fsm.hpp"
 
 string StatusProgram(SystemState state){
@@ -38,13 +39,13 @@ SystemState FSM::getCurrentState() const {
 
 void FSM::transitionToState(SystemState newState) {
     FSM::currentState = newState;
-    auto waktu = std::chrono::system_clock::now();
-    // heartbeat = std::chrono::duration_cast<std::chrono::milliseconds>(waktu.time_since_epoch()).count();
+    uint32_t waktu = std::chrono::duration_cast<std::chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+    FSM::setLastHeartbeat(waktu);
 }
 
 void FSM::setDelay(uint32_t delay) {
+    //Sleep(delay);
     std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-    FSM::delay = delay;
 }
 
 void FSM::getDelay(uint32_t &delay) const {
@@ -80,9 +81,11 @@ uint32_t FSM::getLastHeartbeat() const {
 }
 
 void FSM::setLastHeartbeat(uint32_t heartbeat) {
-    auto waktu = std::chrono::system_clock::now();
-    heartbeat = std::chrono::duration_cast<std::chrono::milliseconds>(waktu.time_since_epoch()).count();
-    FSM::lastHeartbeat = heartbeat;
+    uint32_t waktu_awal;
+    if (FSM::getCurrentState() == SystemState::INIT) {
+        waktu_awal = heartbeat;
+    }
+    FSM::lastHeartbeat = heartbeat - waktu_awal;
 }
 
 void FSM::start() {
@@ -92,8 +95,6 @@ void FSM::start() {
     std::string lower_command;
 
     while(true) {
-        FSM::printStatus();
-
         std::cout << "Here are the list of commands for this Program" << std::endl;
         std::cout << "(IDLE, MOVEMENT, SHOOTING, CALCULATION, STOPPED)" << std::endl;
         std::cout << "Please enter a command : ";
@@ -116,7 +117,9 @@ void FSM::start() {
         }
 
         FSM::update();
-        FSM::addStateToHistory(getCurrentState(), 0);
+
+        FSM::addStateToHistory(getCurrentState(), getLastHeartbeat());        
+        FSM::printStatus();
     }
 }
 
@@ -150,17 +153,23 @@ void FSM::printStateHistory() {
     std::cout << "\n----- State History -----" << std::endl;
     for (size_t n = 0; n < stateHistory.size(); ++n) {
         std::cout << (n + 1) << ". State : " << StatusProgram(stateHistory[n].first)
-                  << ", Heartbeat Time : " << getLastHeartbeat() << endl;  
+                  << ", Heartbeat Time : " << stateHistory[n].second << endl;  
     }
     std::cout << "---------------------------" << std::endl;
 
 }
 
 void FSM::performInit() {
+    uint32_t waktu = std::chrono::duration_cast<std::chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+    FSM::setLastHeartbeat(waktu);
+    std::cout << "Initializing system..." << std::endl;
+    FSM::addStateToHistory(getCurrentState(), getLastHeartbeat());
+
     setDelay(1000);
     transitionToState(SystemState::IDLE);
-    std::cout << "Initializing system..." << std::endl;
+    
     printStatus();
+    FSM::addStateToHistory(getCurrentState(), getLastHeartbeat());
 }
 
 void FSM::performProcess() {
