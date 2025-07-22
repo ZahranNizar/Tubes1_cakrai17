@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
-#include <atomic>
 #include <cctype>
 #include "fsm.hpp"
 
@@ -102,8 +101,9 @@ void FSM::start() {
     FSM::update();
 
     bool programRunning(true);
-    
+
     while(programRunning) {
+        
         performProcess();
 
         if (FSM::getCurrentState() == SystemState::STOPPED) {
@@ -151,6 +151,9 @@ void FSM::printStateHistory() {
         if (n == 0) {
             std::cout << (n + 1) << ". State : " << StatusProgram(stateHistory[n].first)
                       << ", Heartbeat Time : " << 0 << " ms" << endl;    
+        } else if (n == stateHistory.size() - 1) {
+            std::cout << (n + 1) << ". State : " << StatusProgram(stateHistory[n].first)
+                      << ", Heartbeat Time : " << stateHistory[n].second << " ms (Now)" << endl;
         } else {
             std::cout << (n + 1) << ". State : " << StatusProgram(stateHistory[n].first)
                       << ", Heartbeat Time : " << stateHistory[n].second << " ms" << endl; 
@@ -210,6 +213,8 @@ void FSM::performMovement() {
     FSM::setDelay(FSM::delay);
     std::cout << "Moving..." << endl;
     FSM::setMoveCount(++FSM::moveCount);
+    std::cout << "Movement Count : " << getMoveCount() << endl;
+
     if (FSM::moveCount == 3) {
         FSM::transitionToState(SystemState::SHOOTING);
         FSM::update();
@@ -223,6 +228,8 @@ void FSM::performShooting() {
     FSM::setDelay(FSM::delay);
     std::cout << "Shooting..." << endl;
     FSM::setMoveCount(0);
+    std::cout << "Movement Count : " << getMoveCount() << endl;
+
     FSM::transitionToState(SystemState::IDLE);    
 }
 
@@ -242,6 +249,8 @@ void FSM::performErrorHandling() {
     FSM::setDelay(FSM::delay);
     std::cout << "Error occurred, performing error handling..." << endl;
     FSM::setErrorCount(++FSM::errorCount);
+    std::cout << "Error Count : " << getErrorCount() << endl;
+    
     if (FSM::errorCount > 3) {
         FSM::setDelay(FSM::delay);
         FSM::transitionToState(SystemState::STOPPED);
@@ -256,5 +265,5 @@ void FSM::performErrorHandling() {
 void FSM::shutdown() {
     FSM::setDelay(FSM::delay);
     std::cout << "System stopped, shutting down..." << endl;
-    setDelay(FSM::delay);
+    FSM::setDelay(FSM::delay);
 }
