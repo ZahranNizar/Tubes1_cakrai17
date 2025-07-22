@@ -127,6 +127,11 @@ void FSM::start() {
 }
 
 void FSM::update() {
+    
+    uint32_t waktu = std::chrono::duration_cast<std::chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+    FSM::setLastHeartbeat(waktu);
+    FSM::addStateToHistory(getCurrentState(), getLastHeartbeat());    
+    
     switch(FSM::getCurrentState()) {
         case SystemState::INIT: return FSM::performInit();
         case SystemState::IDLE: return FSM::performProcess();
@@ -136,9 +141,7 @@ void FSM::update() {
         case SystemState::ERROR: return FSM::performErrorHandling();
         case SystemState::STOPPED: return FSM::shutdown();
     }
-    uint32_t waktu = std::chrono::duration_cast<std::chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
-    FSM::setLastHeartbeat(waktu);
-    FSM::addStateToHistory(getCurrentState(), getLastHeartbeat());
+    
 }
 
 void FSM::printStatus() {
@@ -189,6 +192,8 @@ void FSM::performProcess() {
 
     if (lower_command == "idle") {
         transitionToState(SystemState::IDLE);
+        FSM::printStatus();
+        FSM::printStateHistory();
     } else if (lower_command == "movement") {
         transitionToState(SystemState::MOVEMENT);
     } else if (lower_command == "shooting") {
@@ -203,7 +208,6 @@ void FSM::performProcess() {
 
     FSM::update();
         
-    FSM::printStatus();
 }
 
 void FSM::performMovement() {
