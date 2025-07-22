@@ -180,7 +180,6 @@ void FSM::performInit() {
     uint32_t waktu = std::chrono::duration_cast<std::chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
     FSM::setLastHeartbeat(waktu);
     std::cout << "Initializing system..." << std::endl;
-    FSM::addStateToHistory(getCurrentState(), getLastHeartbeat());
 
     setDelay(1000);
     transitionToState(SystemState::IDLE);
@@ -191,11 +190,14 @@ void FSM::performInit() {
 
 void FSM::performProcess() {
     std::string lower_command;
+    FSM::setDelay(FSM::delay);
 
+    std::cout << "\n------------------------------------------------" << std::endl;
     std::cout << "Here are the list of commands for this Program" << std::endl;
     std::cout << "(IDLE, MOVEMENT, SHOOTING, CALCULATION, STOPPED)" << std::endl;
     std::cout << "Please enter a command : ";
     std::getline(std::cin, lower_command);
+    std::cout << "------------------------------------------------\n" << std::endl;
     std::transform(lower_command.begin(), lower_command.end(),lower_command.begin(), [](unsigned char c){ return std::tolower(c); });
 
     if (lower_command == "idle") {
@@ -215,7 +217,7 @@ void FSM::performProcess() {
     }
 
     FSM::update();
-        
+       
 }
 
 void FSM::performMovement() {
@@ -223,8 +225,10 @@ void FSM::performMovement() {
     FSM::setMoveCount(++FSM::moveCount);
     if (FSM::moveCount == 3) {
         FSM::transitionToState(SystemState::SHOOTING);
+        FSM::update();
     } else {
         FSM::transitionToState(SystemState::IDLE);
+        FSM::update();
     }
 }
 
@@ -238,8 +242,10 @@ void FSM::performCalculation() {
     std::cout << "Performing Calculation..." << endl;
     if (FSM::moveCount == 0) {
         FSM::transitionToState(SystemState::ERROR);
+        FSM::update();
     } else if (FSM::moveCount > 0) {
         FSM::transitionToState(SystemState::IDLE);
+        FSM::update();
     }
 }
 
@@ -247,12 +253,17 @@ void FSM::performErrorHandling() {
     std::cout << "Error occurred, performing error handling..." << endl;
     FSM::setErrorCount(++FSM::errorCount);
     if (FSM::errorCount > 3) {
+        FSM::setDelay(FSM::delay);
         FSM::transitionToState(SystemState::STOPPED);
+        FSM::update();
     } else {
+        FSM::setDelay(FSM::delay);
         FSM::transitionToState(SystemState::IDLE);
+        FSM::update();
     }
 }
 
 void FSM::shutdown() {
     std::cout << "System stopped, shutting down..." << endl;
+    setDelay(FSM::delay);
 }
